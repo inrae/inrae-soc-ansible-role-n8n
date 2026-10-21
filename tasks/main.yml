@@ -1,0 +1,58 @@
+---
+- name: Configure apache as reverse proxy
+  import_tasks: apache.yml
+
+- name: Ensure gpg is present (require since apt-key remove from debian13)
+  ansible.builtin.apt:
+    pkg:
+      - gpg
+
+- name: Add docker repo key
+  ansible.builtin.get_url:
+    url: "{{ docker_repo_gpg }}"
+    dest: /etc/apt/keyrings/docker.asc
+
+- name: Add docker apt source list file
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] {{ docker_repo_url }} {{ ansible_distribution_release }} stable"
+    state: present
+
+- name: Ensure require packages are present
+  ansible.builtin.apt:
+    pkg:
+    - git
+    - docker-ce
+    - docker-ce-cli
+    - containerd.io
+    - docker-buildx-plugin
+    - docker-compose-plugin
+
+- name: Ensure n8n install dirs is present
+  ansible.builtin.file:
+    path: "{{ n8n_dir }}/runners"
+    state: directory
+    mode: '0755'
+
+- name: Copy static files to n8n install dir
+  ansible.builtin.copy:
+    src: "files/"
+    dest: "{{ n8n_dir }}/"
+
+- name: Copy template files to n8n install dir
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ n8n_dir }}/{{ item.dest }}"
+    owner: root
+    group: root
+    mode: '0644'
+  with_items:
+    - { src: "env.j2", dest: ".env" }
+    - { src: "docker-compose.yml.j2", dest: "docker-compose.yml" }
+    - { src: "runners_dockerfile.j2", dest: "runners/Dockerfile" }
+    - { src: "runners_requirements.txt.j2", dest: "runners/requirements.txt" }
+
+- name: Create and start containers
+  ansible.builtin.command: docker compose up -d
+  args:
+    chdir: "{{ n8n_dir }}"
+

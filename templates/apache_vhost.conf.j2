@@ -1,0 +1,36 @@
+<VirtualHost *:443>
+	SSLEngine on
+	SSLCertificateFile /etc/ssl/certs/ssl-cert-snakeoil.pem
+	SSLCertificateKeyFile /etc/ssl/private/ssl-cert-snakeoil.key
+
+{% if n8n_oidc_enabled %}
+	OIDCRedirectURI https://{{ n8n_fqdn }}/redirect_uri
+	OIDCProviderMetadataURL {{ n8n_oidc_provider_url }}
+	OIDCClientID {{ n8n_oidc_client_id }}
+	OIDCClientSecret {{ n8n_oidc_client_secret }}
+	OIDCCryptoPassphrase {{ n8n_oidc_session_secret }}
+
+{% endif %}
+	RewriteEngine On
+	RewriteCond %{HTTP:Upgrade} =websocket [NC]
+	RewriteRule /(.*) ws://localhost:5678/$1 [P,L]
+
+	ProxyPass "/" "http://localhost:5678/"
+	ProxyPassReverse "/" "http://localhost:5678"
+	ProxyPreserveHost On
+
+{% if n8n_oidc_enabled %}
+	<LocationMatch "/(webhook|webhook-test)">
+		Satisfy any
+	</LocationMatch>
+
+	<Location "/">
+		AuthType openid-connect
+		Require claim {% for user in n8n_oidc_users_root %}sub:{{ user }} {% endfor %}
+
+	</Location>
+
+{% endif %}
+	ErrorLog ${APACHE_LOG_DIR}/error.log
+	CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>

@@ -1,0 +1,25 @@
+---
+n8n_version: '2.17.3'
+n8n_dir: '/root/n8n'
+n8n_fqdn: 'n8n.toto.fr'
+n8n_encryption_key: 'toto'
+
+n8n_db_host: 'localhost'
+n8n_db_name: 'n8n'
+n8n_db_user: 'n8n'
+n8n_db_pass: 'toto'
+
+n8n_oidc_enabled: False
+n8n_oidc_users_root:
+  - toto
+n8n_oidc_provider_url: 'https://sso.toto.fr/.well-known/openid-configuration'
+n8n_oidc_client_id: 'toto'
+n8n_oidc_client_secret: 123456
+n8n_oidc_session_secret: 09876
+
+n8n_runner_token: 'toto'
+#n8n_runner_python_import:
+#  - "dnspython"
+
+docker_repo_url: 'https://download.docker.com/linux/debian'
+docker_repo_gpg: 'https://download.docker.com/linux/debian/gpg'

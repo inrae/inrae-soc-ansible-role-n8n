@@ -1,0 +1,33 @@
+---
+- name: Ensure apache2 is present
+  ansible.builtin.apt:
+    pkg:
+      - apache2
+      - libapache2-mod-auth-openidc
+
+- name: Ensure apache2 service is enabled
+  ansible.builtin.systemd_service:
+    name: apache2
+    enabled: true
+
+- name: Ensure apache2 modules are enabled
+  community.general.apache2_module:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - ssl
+    - proxy
+    - proxy_http
+    - proxy_wstunnel
+    - rewrite
+  notify: restart apache
+
+- name: Ensure apache2 configuration is up2date
+  ansible.builtin.template:
+    src: "apache_vhost.conf.j2"
+    dest: "/etc/apache2/sites-available/000-default.conf"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart apache
+  
